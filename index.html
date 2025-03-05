@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFID Crowd Tracking</title>
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+        google.charts.load("current", {packages:["corechart"]});
+        google.charts.setOnLoadCallback(loadData);
+
+        function loadData() {
+            fetch("https://script.google.com/macros/s/AKfycbxAIvQXTsdym1J0l_PzJtnFtbr8SEonhvqAkaHHiYl7hx0VGLrD9kSQtDcG5YEW_Jx6/exec")
+                .then(response => response.json())
+                .then(data => {
+                    displayTable(data);
+                    drawChart(data);
+                })
+                .catch(error => console.error("Error fetching data:", error));
+        }
+
+        // Display the fetched data in a table
+        function displayTable(data) {
+            let table = "<table border='1'><tr><th>Card ID</th><th>Timestamp</th></tr>";
+            data.forEach(row => {
+                table += `<tr><td>${row.cardID}</td><td>${new Date(row.timestamp).toLocaleString()}</td></tr>`;
+            });
+            table += "</table>";
+            document.getElementById("data-table").innerHTML = table;
+        }
+
+        // Draw a chart with the fetched data
+        function drawChart(data) {
+            let chartData = [["Timestamp", "Scans"]];
+            let scanCounts = {};
+
+            // Group by timestamp (hour and minute)
+            data.forEach(row => {
+                let time = new Date(row.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+                scanCounts[time] = (scanCounts[time] || 0) + 1;
+            });
+
+            // Prepare chart data
+            for (let time in scanCounts) {
+                chartData.push([time, scanCounts[time]]);
+            }
+
+            var dataTable = google.visualization.arrayToDataTable(chartData);
+            var options = {title: "RFID Scans Over Time", width: 800, height: 400};
+            var chart = new google.visualization.LineChart(document.getElementById("chart_div"));
+            chart.draw(dataTable, options);
+        }
+    </script>
+</head>
+<body>
+    <h2>RFID Crowd Tracking Dashboard</h2>
+    
+    <!-- Table to show the data -->
+    <div id="data-table"></div>
+
+    <!-- Chart to show the trends -->
+    <div id="chart_div"></div>
+</body>
+</html>
